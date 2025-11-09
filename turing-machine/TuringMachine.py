@@ -143,10 +143,11 @@ class Tape:
     def move(self, steps):
         if steps > 0:
             if self.tpos + steps >= len(self.tape):
-                self.tape = self.tape + [' '] * steps
+                self.tape = self.tape + [' '] * (self.tpos + steps + 1 - len(self.tape))
         else:
             if self.tpos + steps < 0:
-                self.tape = [' '] * abs(steps) + self.tape
+                self.tape = [' '] * (abs(steps) - self.tpos) + self.tape
+                self.tpos -= steps
         self.tpos += steps
 
     def write(self, char):
