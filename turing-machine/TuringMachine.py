@@ -114,25 +114,22 @@ class TapeRecorder:
     def __str__(self):
         start = self.tpos - self.window
         if start < 0:
-            self.extend_l(-start)
+            self._extend_l(-start)
             start = 0
         end = self.tpos + self.window + 1
         if end > len(self.tape):
-            self.extend_r(end - len(self.tape))
+            self._extend_r(end - len(self.tape))
         frag = self.tape[start: end]
         return ''.join([f"[{x}]" for x in frag])
-
-    def get_window(self):
-        return self.window
 
     def set_window(self, w):
         self.window = w
 
-    def extend_l(self, c):
+    def _extend_l(self, c):
         self.tape = [' '] * c + self.tape
         self.tpos += c
 
-    def extend_r(self, c):
+    def _extend_r(self, c):
         self.tape = self.tape + [' '] * c
 
     def __repr__(self):
