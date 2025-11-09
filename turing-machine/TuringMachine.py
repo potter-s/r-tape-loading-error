@@ -2,7 +2,7 @@
 
 class TuringMachine:
     def __init__(self, state=None, max_iterations=100):
-        self.max_iterations = self.set_max_iterations(max_iterations)
+        self.set_max_iterations(max_iterations)
         self.state_rules = StateRules()
         self.tape = TapeRecorder()
         self.from_states = set()
@@ -30,21 +30,19 @@ class TuringMachine:
     def next(self, print=False):
         if self.current_step > self.max_iterations:
             self.halted = True
-        next = self.rules.check_rule(self.state, self.tape.read)
+        next = self.state_rules.check_rule(self.state, self.tape.read())
         if not next:
             self.halted = True
         if next.instructions[0] == 'H':
-            self.halt = True
-        if self.halt:
+            self.halted = True
+        if self.halted:
             return False
         self.apply_state(next)
         self.current_step += 1
 
     def run(self, max_iterations=None, print=False):
-         #if max_iterations:
-          #   self.set_max_iterations(max_iterations)
-        while not self.halt:
-            self.next()# self.apply_rules(next)
+        while not self.halted:
+            self.next()
 
     def finalise(self):
         self.check()
@@ -65,7 +63,7 @@ class TuringMachine:
             raise RuntimeError(f"Machine configuration error: state(s) used but not defined [{undef_states}]")
 
     def next_state(self):
-        return self.rules.check_rule(self.state, self.tape.read)
+        return self.state_rules.check_rule(self.state, self.tape.read)
 
     def apply_state(self, next):
         self.state = next.state
@@ -74,9 +72,9 @@ class TuringMachine:
                 self.tape.L()
             elif instruction == 'R':
                 self.tape.R()
-            elif instruction.startswith 'P' and len(instruction) == 2:
+            elif instruction.startswith('P') and len(instruction) == 2:
                 self.tape.write(instruction[1])
-            else
+            else:
                 raise RuntimeError(f"Undefined instruction {instruction}")
 
 class Action:
@@ -138,7 +136,7 @@ class TapeRecorder:
         self.tape = self.tape + [' '] * c
 
     def __repr__(self):
-        return f"Tape of length {self.tlen} at position {self.tpos}"
+        return f"Tape of length {len(self.tape)} at position {self.tpos}"
 
     def len(self):
         return len(self.tape)
