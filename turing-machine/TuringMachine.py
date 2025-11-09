@@ -4,7 +4,7 @@ class TuringMachine:
     def __init__(self, state=None, max_iterations=100):
         self.max_iterations = self.set_max_iterations(max_iterations)
         self.state_rules = StateRules()
-        self.tape = Tape()
+        self.tape = TapeRecorder()
         self.from_states = set()
         self.to_states = set()
         self.configurable = True
@@ -12,8 +12,8 @@ class TuringMachine:
         self.current_step = 0
         self.halted = False
 
-    def set_max_iterations(self, mi):
-        self.max_iterations = mi
+    def set_max_iterations(self, max_iterations):
+        self.max_iterations = max_iterations
 
     def set_state(self, state):
         """
@@ -28,31 +28,32 @@ class TuringMachine:
         return self.tape.read()
 
     def next(self, print=False):
-        self.current_step += 1
         if self.current_step > self.max_iterations:
             self.halted = True
+        next = self.rules.check_rule(self.state, self.tape.read)
+        if not next:
+            self.halted = True
+        if next.instructions[0] == 'H':
+            self.halt = True
         if self.halt:
             return False
-        char = self.read_char()
-        next = self.state_rules.check_rule(self.state, char)
-        if next.action[0] == 'Halt':
-            self.halt = True
-            return False
+        self.apply_state(next)
+        self.current_step += 1
 
     def run(self, max_iterations=None, print=False):
-        if max_iterations:
-            self.set_max_iterations(max_iterations)
+         #if max_iterations:
+          #   self.set_max_iterations(max_iterations)
         while not self.halt:
-            self.apply_rules(next)
+            self.next()# self.apply_rules(next)
 
     def finalise(self):
         self.check()
         self.configurable = False
 
-    def add_state_rule(self, state, characters, new_state, actions):
+    def add_state_rule(self, state, characters, new_state, instructions):
         if not self.configurable:
             raise RuntimeError("Machine configuration already finalised")
-        self.state_rules.add_rule(state, characters, new_state, actions)
+        self.state_rules.add_rule(state, characters, new_state, instructions)
         if not self.state:
             self.state = state
         self.from_states.add(state)
@@ -63,33 +64,38 @@ class TuringMachine:
         if undef_states:
             raise RuntimeError(f"Machine configuration error: state(s) used but not defined [{undef_states}]")
 
+    def next_state(self):
+        return self.rules.check_rule(self.state, self.tape.read)
+
     def apply_state(self, next):
         self.state = next.state
-        for action in next.actions:
-            pass
+        for instruction in next.instructions:
+            if instruction == 'L':
+                self.tape.L()
+            elif instruction == 'R':
+                self.tape.R()
+            elif instruction.startswith 'P' and len(instruction) == 2:
+                self.tape.write(instruction[1])
+            else
+                raise RuntimeError(f"Undefined instruction {instruction}")
 
-#class State:
-#def __init__(self, state, character):
-#self.state = state
-#self.actions = actions
-
-class Next:
-    def __init__(self, state, actions):
+class Action:
+    def __init__(self, state, instructions):
         self.state = state
-        self.actions = actions
+        self.instructions = instructions
 
 class StateRules:
     def __init__(self):
         self.rules = {}
 
-    def add_rule(self, state, characters, new_state, actions):
+    def add_rule(self, state, characters, new_state, instructions):
         if not state in self.rules:
             self.rules[state] = {}
         if len(characters) > 0:
             for char in characters:
-                self.rules[state][char] = Next(new_state, actions)
+                self.rules[state][char] = Action(new_state, instructions)
         else:
-            self.rules[state][''] = Next(new_state, actions)
+            self.rules[state][''] = Action(new_state, instructions)
 
     def check_rule(self, state, character):
         if not state in self.rules:
@@ -101,7 +107,7 @@ class StateRules:
         else:
             raise RuntimeError(f"Undefined character {character} in state {state}")
 
-class Tape:
+class TapeRecorder:
     def __init__(self, window=5):
         self.tpos = 0
         self.window = window
@@ -140,7 +146,7 @@ class Tape:
     def pos(self):
         return self.tpos
 
-    def move(self, steps):
+    def move_tape(self, steps):
         if steps > 0:
             if self.tpos + steps >= len(self.tape):
                 self.tape = self.tape + [' '] * (self.tpos + steps + 1 - len(self.tape))
@@ -157,9 +163,9 @@ class Tape:
         return self.tape[self.tpos]
 
     def L(self, steps=1):
-        self.move(-steps)
+        self.move_tape(-steps)
         return self
 
     def R(self, steps=1):
-        self.move(steps)
+        self.move_tape(steps)
         return self
