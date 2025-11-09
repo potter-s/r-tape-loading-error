@@ -51,6 +51,7 @@ class TuringMachine:
     def add_state_rule(self, state, characters, new_state, instructions):
         if not self.configurable:
             raise RuntimeError("Machine configuration already finalised")
+        instructions = instructions.split(';')
         self.state_rules.add_rule(state, characters, new_state, instructions)
         if not self.state:
             self.state = state
