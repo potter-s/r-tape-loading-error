@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 
 class TuringMachine:
-    def __init__(self, state=None, max_iterations=100, tape=tape):
+    def __init__(self, state=None, max_iterations=100, tape=None):
         self.set_max_iterations(max_iterations)
         self.state_machine = StateMachine()
         self.tape_recorder = TapeRecorder()
+        self.tape = tape
         self.tape_recorder.load(tape)
         self.from_states = set()
         self.to_states = set()
@@ -25,13 +26,10 @@ class TuringMachine:
         if state:
             self.to_states.add(state)
 
-    def read_char(self):
-        return self.tape.read()
-
     def next(self, print=False):
         if self.current_step > self.max_iterations:
             self.halted = True
-        next = self.state_machine.check_rule(self.state, self.tape.read())
+        next = self.state_machine.check_rule(self.state, self.tape_recorder.read())
         if not next:
             self.halted = True
         if next.instructions[0] == 'H':
@@ -64,18 +62,15 @@ class TuringMachine:
         if undef_states:
             raise RuntimeError(f"Machine configuration error: state(s) used but not defined [{undef_states}]")
 
-    def next_state(self):
-        return self.state_machine.check_rule(self.state, self.tape.read)
-
     def apply_state(self, next):
         self.state = next.state
         for instruction in next.instructions:
             if instruction == 'L':
-                self.tape.L()
+                self.tape_recorder.L()
             elif instruction == 'R':
-                self.tape.R()
+                self.tape_recorder.R()
             elif instruction.startswith('P') and len(instruction) == 2:
-                self.tape.write(instruction[1])
+                self.tape_recorder.write(instruction[1])
             else:
                 raise RuntimeError(f"Undefined instruction {instruction}")
 
@@ -108,28 +103,29 @@ class StateMachine:
             raise RuntimeError(f"Undefined character {character} in state {state}")
 
 class Tape:
-    def __init__(self, window=5):
-        self.tape = [' ']
+    def __init__(self, window=5, data=[' ']):
+        self.data = data
 
     def __repr__(self):
-        return f"Tape of length {len(self.tape)} at position {self.tpos}"
+        # return f"Tape of length {len(self.data)} at position {self.tpos}"
+        return f"Tape of length {len(self.data)}"
 
     def __str__(self):
+        return ''.join([f"[{x}]" for x in self.data])
         start = self.tpos - self.window
         if start < 0:
             self._extend_l(-start)
             start = 0
         end = self.tpos + self.window + 1
-        if end > len(self.tape):
-            self._extend_r(end - len(self.tape))
+        if end > len(self.data):
+            self._extend_r(end - len(self.data))
         frag = self.tape[start: end]
         return ''.join([f"[{x}]" for x in frag])
 
 class TapeRecorder:
-    def __init__(self, window=5, tape=tape):
+    def __init__(self, window=5):
         self.tpos = 0
         self.window = window
-        self.tape = tape #[' ']
 
     def eject(self):
         return self.tape
@@ -158,30 +154,30 @@ class TapeRecorder:
     def _extend_r(self, c):
         self.tape = self.tape + [' '] * c
 
-    def __repr__(self):
-        return f"Tape of length {len(self.tape)} at position {self.tpos}"
+     #def __repr__(self):
+      #   return f"Tape of length {len(self.tape)} at position {self.tpos}"
 
-    def len(self):
-        return len(self.tape)
+     #def len(self):
+      #   return len(self.tape)
 
     def pos(self):
         return self.tpos
 
     def move_tape(self, steps):
         if steps > 0:
-            if self.tpos + steps >= len(self.tape):
-                self.tape = self.tape + [' '] * (self.tpos + steps + 1 - len(self.tape))
+            if self.tpos + steps >= len(self.tape.data):
+                self.tape.data = self.tape.data + [' '] * (self.tpos + steps + 1 - len(self.tape.data))
         else:
             if self.tpos + steps < 0:
-                self.tape = [' '] * (abs(steps) - self.tpos) + self.tape
+                self.tape.data = [' '] * (abs(steps) - self.tpos) + self.tape.data
                 self.tpos -= steps
         self.tpos += steps
 
     def write(self, char):
-        self.tape[self.tpos] = char
+        self.tape.data[self.tpos] = char
 
     def read(self):
-        return self.tape[self.tpos]
+        return self.tape.data[self.tpos]
 
     def L(self, steps=1):
         self.move_tape(-steps)
