@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 
 class TuringMachine:
-    def __init__(self, state=None, max_iterations=100):
+    def __init__(self, state=None, max_iterations=100, tape=tape):
         self.set_max_iterations(max_iterations)
         self.state_machine = StateMachine()
-        self.tape = TapeRecorder()
+        self.tape_recorder = TapeRecorder()
+        self.tape_recorder.load(tape)
         self.from_states = set()
         self.to_states = set()
         self.configurable = True
@@ -106,11 +107,35 @@ class StateMachine:
         else:
             raise RuntimeError(f"Undefined character {character} in state {state}")
 
-class TapeRecorder:
+class Tape:
     def __init__(self, window=5):
+        self.tape = [' ']
+
+    def __repr__(self):
+        return f"Tape of length {len(self.tape)} at position {self.tpos}"
+
+    def __str__(self):
+        start = self.tpos - self.window
+        if start < 0:
+            self._extend_l(-start)
+            start = 0
+        end = self.tpos + self.window + 1
+        if end > len(self.tape):
+            self._extend_r(end - len(self.tape))
+        frag = self.tape[start: end]
+        return ''.join([f"[{x}]" for x in frag])
+
+class TapeRecorder:
+    def __init__(self, window=5, tape=tape):
         self.tpos = 0
         self.window = window
-        self.tape = [' ']
+        self.tape = tape #[' ']
+
+    def eject(self):
+        return self.tape
+
+    def load(self, tape):
+        self.tape = tape
 
     def __str__(self):
         start = self.tpos - self.window
