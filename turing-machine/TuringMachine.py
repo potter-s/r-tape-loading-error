@@ -3,7 +3,7 @@
 class TuringMachine:
     def __init__(self, state=None, max_iterations=100):
         self.set_max_iterations(max_iterations)
-        self.state_rules = StateRules()
+        self.state_machine = StateMachine()
         self.tape = TapeRecorder()
         self.from_states = set()
         self.to_states = set()
@@ -30,7 +30,7 @@ class TuringMachine:
     def next(self, print=False):
         if self.current_step > self.max_iterations:
             self.halted = True
-        next = self.state_rules.check_rule(self.state, self.tape.read())
+        next = self.state_machine.check_rule(self.state, self.tape.read())
         if not next:
             self.halted = True
         if next.instructions[0] == 'H':
@@ -52,7 +52,7 @@ class TuringMachine:
         if not self.configurable:
             raise RuntimeError("Machine configuration already finalised")
         instructions = instructions.split(';')
-        self.state_rules.add_rule(state, characters, new_state, instructions)
+        self.state_machine.add_rule(state, characters, new_state, instructions)
         if not self.state:
             self.state = state
         self.from_states.add(state)
@@ -64,7 +64,7 @@ class TuringMachine:
             raise RuntimeError(f"Machine configuration error: state(s) used but not defined [{undef_states}]")
 
     def next_state(self):
-        return self.state_rules.check_rule(self.state, self.tape.read)
+        return self.state_machine.check_rule(self.state, self.tape.read)
 
     def apply_state(self, next):
         self.state = next.state
@@ -83,7 +83,7 @@ class Action:
         self.state = state
         self.instructions = instructions
 
-class StateRules:
+class StateMachine:
     def __init__(self):
         self.rules = {}
 
