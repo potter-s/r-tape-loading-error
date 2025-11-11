@@ -14,6 +14,16 @@ class TuringMachine:
         self.current_step = 0
         self.halted = False
 
+    def load(self, tape):
+        self.tape_recorder.load(tape)
+
+    # This is useless because of pass by reference - the tape object is edited in place
+    def eject(self):
+        return self.tape_recorder.eject()
+
+    def set_position(self, tpos):
+        self.tape_recorder.tpos = tpos
+
     def set_max_iterations(self, max_iterations):
         self.max_iterations = max_iterations
 
@@ -71,6 +81,8 @@ class TuringMachine:
                 self.tape_recorder.R()
             elif instruction.startswith('P') and len(instruction) == 2:
                 self.tape_recorder.write(instruction[1])
+            elif instruction == 'H':
+                self.halted = True
             else:
                 raise RuntimeError(f"Undefined instruction {instruction}")
 
@@ -112,15 +124,18 @@ class Tape:
 
     def __str__(self):
         return ''.join([f"[{x}]" for x in self.data])
-        start = self.tpos - self.window
-        if start < 0:
-            self._extend_l(-start)
-            start = 0
-        end = self.tpos + self.window + 1
-        if end > len(self.data):
-            self._extend_r(end - len(self.data))
-        frag = self.tape[start: end]
-        return ''.join([f"[{x}]" for x in frag])
+
+  # placeholder for something to print a window of the tape
+  # def __show__(self):
+  #     start = self.tpos - self.window
+  #     if start < 0:
+  #         self._extend_l(-start)
+  #         start = 0
+  #     end = self.tpos + self.window + 1
+  #     if end > len(self.data):
+  #         self._extend_r(end - len(self.data))
+  #     frag = self.tape[start: end]
+  #     return ''.join([f"[{x}]" for x in frag])
 
 class TapeRecorder:
     def __init__(self, window=5):
@@ -153,12 +168,6 @@ class TapeRecorder:
 
     def _extend_r(self, c):
         self.tape = self.tape + [' '] * c
-
-     #def __repr__(self):
-      #   return f"Tape of length {len(self.tape)} at position {self.tpos}"
-
-     #def len(self):
-      #   return len(self.tape)
 
     def pos(self):
         return self.tpos
