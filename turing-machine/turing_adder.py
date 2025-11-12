@@ -2,16 +2,16 @@
 
 import random
 import sys
-import TuringMachine
+from turing_machine import TuringMachine, Tape
 
 n1 = random.randint(1,10)
 n2 = random.randint(1,10)
 
-tape = TuringMachine.Tape(data = ['1'] * n1 + [' '] + ['1'] * n2)
+tape = Tape(data = ['1'] * n1 + [' '] + ['1'] * n2)
 print("Adding", n1, "and", n2)
 print("Created tape:", tape)
 
-tm = TuringMachine.TuringMachine()
+tm = TuringMachine()
 tm.load(tape)
 
 tm.add_state_rule('A', '1', 'A', 'R')
